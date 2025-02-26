@@ -73,8 +73,23 @@ int main(int argc, char** argv) {
 
     uint64 size = 0, target = 0, count = 0;
     std::string filename;
+    bool f_read = 0, f_write = 0;
 
     argparse::ArgumentParser args("random file readwrite benchmark");
+
+    auto &mode = args.add_group("readwrite");
+
+    mode.add_argument("-r", "--read")
+        .help("enable read")
+        .flag()
+        .store_into(f_read);
+
+    mode.add_argument("-w", "--write")
+        .help("enable write")
+        .flag()
+        .store_into(f_write);
+
+
     args.add_argument("-s", "--size")
         .help("rw size")
         .scan<'u', uint64>()
@@ -118,11 +133,16 @@ int main(int argc, char** argv) {
     std::vector<std::shared_future<int>> futures_v;
 
     for(int i = 0; i < count; i++) {
+        if(f_read) {
+            std::shared_future<int> fut = std::async(&File::rand_read, &f, size);
+            futures_v.push_back(fut);
+        }
+        if(f_write) {
         
-        std::shared_future<int> fut = std::async(&File::rand_read, &f, size);
-        std::shared_future<int> fut2 = std::async(&File::rand_write, &f, size);
-        futures_v.push_back(fut);
-        futures_v.push_back(fut2);
+            std::shared_future<int> fut2 = std::async(&File::rand_write, &f, size);
+            
+            futures_v.push_back(fut2);
+        }
     }
 
     for(auto& fut : futures_v) {
