@@ -148,7 +148,8 @@ int main(int argc, char** argv) {
     for(auto& fut : futures_v) {
         fut.wait();
     }
-
+    std::cout << "ready to exit\n";
+    return 0;
 
     
 }
