@@ -23,6 +23,7 @@ thread_local time_point_t start, end;
 
 
 
+
 uint64 randu64() {  
     //lol
     return (uint64)rand() << 32 | (uint64)rand();
@@ -32,15 +33,17 @@ uint64 randu64() {
 struct File {
     int fd;
     uint64 size;
+    byte* buf;
     
     void set_fsize() {
         byte c = 0;
         pwrite64(fd, &c, 1, size - 1);
     }
-    File(std::string fname, uint64 target_size) {
+    File(std::string fname, uint64 target_size, uint64 rwsize) {
         fd = open(fname.c_str(), O_CREAT | O_RDWR, 00700);
         size = target_size;
         set_fsize();
+        buf = new byte[rwsize];
     }
 
     uint64 rand_offset(uint64 rwsize) const {
@@ -48,16 +51,16 @@ struct File {
     }
 
     int rand_read(uint64 rwsize) const {
-        byte* buf = new byte[rwsize];
+        //byte* buf = new byte[rwsize];
         pread64(fd, buf, rwsize, rand_offset(rwsize));
-        delete[] buf;
+        //delete[] buf;
         return 0;
     }
 
     int rand_write(uint64 rwsize) const {
-        byte* buf = new byte[rwsize];
+        //byte* buf = new byte[rwsize];
         pwrite64(fd, buf, rwsize, rand_offset(rwsize));
-        delete[] buf;
+        //delete[] buf;
         return 0;
     };
 
@@ -110,7 +113,7 @@ int main(int argc, char** argv) {
         std::cerr << args;
         std::exit(1);
     }
-    File f(filename, target);
+    File f(filename, target, size);
 
     std::vector<std::shared_future<int>> futures_v;
 
