@@ -39,8 +39,8 @@ struct File {
         byte c = 0;
         pwrite64(fd, &c, 1, size - 1);
     }
-    File(std::string fname, uint64 target_size, uint64 rwsize) {
-        fd = open(fname.c_str(), O_CREAT | O_RDWR, 00700);
+    File(std::string fname, uint64 target_size, uint64 rwsize, int flags = 0) {
+        fd = open(fname.c_str(), O_CREAT | O_RDWR | flags, 00700);
         size = target_size;
         set_fsize();
         buf = new byte[rwsize];
@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
     uint64 size = 0, target = 0, count = 0;
     std::string filename;
     bool f_read = 0, f_write = 0;
+    bool f_direct_io = 0;
 
     argparse::ArgumentParser args("random file readwrite benchmark");
 
@@ -88,7 +89,10 @@ int main(int argc, char** argv) {
         .help("enable write")
         .flag()
         .store_into(f_write);
-
+    args.add_argument("-d", "--directio")
+        .help("direct io")
+        .flag()
+        .store_into(f_direct_io);
 
     args.add_argument("-s", "--size")
         .help("rw size")
@@ -128,7 +132,8 @@ int main(int argc, char** argv) {
         std::cerr << args;
         std::exit(1);
     }
-    File f(filename, target, size);
+    int flags = f_direct_io ? O_DIRECT : 0;
+    File f(filename, target, size, flags);
 
     std::vector<std::shared_future<int>> futures_v;
 
