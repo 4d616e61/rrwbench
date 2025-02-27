@@ -75,6 +75,7 @@ int main(int argc, char** argv) {
     std::string filename;
     bool f_read = 0, f_write = 0;
     bool f_direct_io = 0;
+    bool f_async = 0;
 
     argparse::ArgumentParser args("random file readwrite benchmark");
 
@@ -89,10 +90,16 @@ int main(int argc, char** argv) {
         .help("enable write")
         .flag()
         .store_into(f_write);
+
     args.add_argument("-d", "--directio")
         .help("direct io")
         .flag()
         .store_into(f_direct_io);
+    
+    args.add_argument("-a", "--async")
+        .help("async")
+        .flag()
+        .store_into(f_async);
 
     args.add_argument("-s", "--size")
         .help("rw size")
@@ -137,16 +144,27 @@ int main(int argc, char** argv) {
 
     std::vector<std::shared_future<int>> futures_v;
 
+    //not very optimized sync rw
     for(int i = 0; i < count; i++) {
         if(f_read) {
-            std::shared_future<int> fut = std::async(&File::rand_read, &f, size);
-            futures_v.push_back(fut);
+            if(f_async) {
+                std::shared_future<int> fut = std::async(&File::rand_read, &f, size);
+                futures_v.push_back(fut);
+            }
+            else {
+                f.rand_read(size);
+            }
+            
         }
         if(f_write) {
-        
-            std::shared_future<int> fut2 = std::async(&File::rand_write, &f, size);
+            if(f_async){
+                std::shared_future<int> fut2 = std::async(&File::rand_write, &f, size); 
+                futures_v.push_back(fut2);
+            }
+            else {
+                f.rand_write(size);
+            }
             
-            futures_v.push_back(fut2);
         }
     }
 
